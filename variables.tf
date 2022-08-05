@@ -17,6 +17,22 @@ variable "access_points" {
     EOT
 }
 
+variable "security_groups" {
+  type        = list(string)
+  description = "The security groups used in the ALB and the ECS service"
+
+  validation {
+    condition     = alltrue([for sg in var.security_groups : can(regex("^sg-", sg))])
+    error_message = "All security groups must be valid."
+  }
+}
+
+variable "access_points_defaults" {
+  type        = map(map(string))
+  description = "The default values for the access points"
+  default     = {}
+}
+
 variable "vpc_id" {
   type        = string
   description = "VPC ID"
