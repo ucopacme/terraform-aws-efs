@@ -62,7 +62,7 @@ resource "aws_efs_access_point" "default" {
       content {
         owner_gid   = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "owner_gid")
         owner_uid   = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "owner_uid")
-        permissions = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "permissions"
+        permissions = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "permissions")
       }
     }
   }
