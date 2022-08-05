@@ -89,28 +89,27 @@ variable "mount_target_ip_address" {
 # }
 
 variable "transition_to_ia" {
-  type        = list(string)
-  description = "Indicates how long it takes to transition files to the Infrequent Access (IA) storage class. Valid values: AFTER_7_DAYS, AFTER_14_DAYS, AFTER_30_DAYS, AFTER_60_DAYS and AFTER_90_DAYS. Default (no value) means \"never\"."
-  default     = []
+  type        = string
+  description = "The period of time that a file is not accessed, after which it transitions to the IA storage class"
+  default     = ""
+
   validation {
-    condition = (
-      length(var.transition_to_ia) == 1 ? contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia[0]) : length(var.transition_to_ia) == 0
-    )
-    error_message = "Var `transition_to_ia` must either be empty list or one of \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\"."
+    condition     = var.transition_to_ia == "" || contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia)
+    error_message = "Invalid value for transition_to_ia."
   }
 }
 
-variable "transition_to_primary_storage_class" {
-  type        = list(string)
-  description = "Describes the policy used to transition a file from Infrequent Access (IA) storage to primary storage. Valid values: AFTER_1_ACCESS."
-  default     = []
-  validation {
-    condition = (
-      length(var.transition_to_primary_storage_class) == 1 ? contains(["AFTER_1_ACCESS"], var.transition_to_primary_storage_class[0]) : length(var.transition_to_primary_storage_class) == 0
-    )
-    error_message = "Var `transition_to_primary_storage_class` must either be empty list or \"AFTER_1_ACCESS\"."
-  }
-}
+# variable "transition_to_primary_storage_class" {
+#   type        = list(string)
+#   description = "Describes the policy used to transition a file from Infrequent Access (IA) storage to primary storage. Valid values: AFTER_1_ACCESS."
+#   default     = []
+#   validation {
+#     condition = (
+#       length(var.transition_to_primary_storage_class) == 1 ? contains(["AFTER_1_ACCESS"], var.transition_to_primary_storage_class[0]) : length(var.transition_to_primary_storage_class) == 0
+#     )
+#     error_message = "Var `transition_to_primary_storage_class` must either be empty list or \"AFTER_1_ACCESS\"."
+#   }
+# }
 
 variable "efs_backup_policy_enabled" {
   type        = bool

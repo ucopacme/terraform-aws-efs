@@ -17,12 +17,12 @@ resource "aws_efs_file_system" "default" {
     }
   }
 
-  dynamic "lifecycle_policy" {
-    for_each = var.transition_to_primary_storage_class == "" ? [] : [1]
-    content {
-      transition_to_primary_storage_class = var.transition_to_primary_storage_class
-    }
-  }
+  # dynamic "lifecycle_policy" {
+  #   for_each = var.transition_to_primary_storage_class == "" ? [] : [1]
+  #   content {
+  #     transition_to_primary_storage_class = var.transition_to_primary_storage_class
+  #   }
+  # }
 }
 
 resource "aws_efs_mount_target" "default" {
