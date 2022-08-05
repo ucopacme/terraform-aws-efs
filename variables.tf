@@ -1,111 +1,128 @@
-variable "file_system_name" {
-  type        = string
-  description = "The name of the file system"
-  default     = ""
-}
-
-variable "encrypted" {
-  type        = bool
-  description = "Whether the EFS File System should be encrypted"
-  default     = false
-}
-
-variable "kms_key_id" {
-  type        = string
-  description = "The KMS Key ID that will be used to encrypt the file system. Encryption will be turned on automatically"
-  default     = ""
-}
-
-variable "performance_mode" {
-  type        = string
-  description = "The file system performance mode"
-  default     = "generalPurpose"
-
-  validation {
-    condition     = contains(["generalPurpose", "maxIO"], var.performance_mode)
-    error_message = "The file system performance mode must be either 'generalPurpose' or 'maxIO'."
-  }
-}
-
-variable "throughput_mode" {
-  type        = string
-  description = "Throughput mode for the file system. When using provisioned, specify 'provisioned_throughput_in_mibps'"
-  default     = "bursting"
-
-  validation {
-    condition     = contains(["bursting", "provisioned"], var.throughput_mode)
-    error_message = "Throughput mode must be either 'bursting' or 'provisioned'."
-  }
-}
-
-variable "provisioned_throughput_in_mibps" {
-  type        = number
-  description = "The throughput when using 'throughput_mode == \"provisioned\"'"
-  default     = 0
-}
-
-variable "transition_to_ia" {
-  type        = string
-  description = "The period of time that a file is not accessed, after which it transitions to the IA storage class"
-  default     = ""
-
-  validation {
-    condition     = var.transition_to_ia == "" || contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia)
-    error_message = "Invalid value for transition_to_ia."
-  }
+variable "allowed_cidr_blocks" {
+  type        = list(string)
+  default     = []
+  description = "The CIDR blocks from which to allow `ingress` traffic to the EFS"
 }
 
 variable "access_points" {
-  type        = map(map(map(string)))
-  description = "The list of access points"
+  type        = map(map(map(any)))
   default     = {}
-}
-
-variable "access_points_defaults" {
-  type        = map(map(string))
-  description = "The default values for the access points"
-  default     = {}
-}
-
-variable "subnets" {
-  type        = list(string)
-  description = "The list of subnets where the services will be deployed"
-
-  validation {
-    condition     = alltrue([for sg in var.subnets : can(regex("^subnet-", sg))])
-    error_message = "All subnets must be valid."
-  }
-}
-
-variable "security_groups" {
-  type        = list(string)
-  description = "The security groups used in the ALB and the ECS service"
-
-  validation {
-    condition     = alltrue([for sg in var.security_groups : can(regex("^sg-", sg))])
-    error_message = "All security groups must be valid."
-  }
-}
-
-variable "enable_vpc_endpoint" {
-  type        = bool
-  default     = false
-  description = "Whether to enable the VPC endpoint"
+  description = <<-EOT
+    A map of the access points you would like in your EFS volume
+    See [examples/complete] for an example on how to set this up.
+    All keys are strings. The primary keys are the names of access points.
+    The secondary keys are `posix_user` and `creation_info`.
+    The secondary_gids key should be a comma separated value.
+    More information can be found in the terraform resource [efs_access_point](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_access_point).
+    EOT
 }
 
 variable "vpc_id" {
   type        = string
-  description = "The VPC identifier. Required when `enable_vpc_endpoint == true`"
-  default     = ""
+  description = "VPC ID"
+}
 
+variable "region" {
+  type        = string
+  description = "AWS Region"
+}
+
+variable "subnets" {
+  type        = list(string)
+  description = "Subnet IDs"
+}
+
+variable "tags" {
+  default     = {}
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+}
+
+
+variable "zone_id" {
+  type        = list(string)
+  default     = []
+  description = <<-EOT
+    Route53 DNS Zone ID as list of string (0 or 1 items). If empty, no custom DNS name will be published.
+    If the list contains a single Zone ID, a custom DNS name will be pulished in that zone.
+    Can also be a plain string, but that use is DEPRECATED because of Terraform issues.
+    EOT
+}
+
+variable "encrypted" {
+  type        = bool
+  description = "If true, the file system will be encrypted"
+  default     = true
+}
+
+variable "kms_key_id" {
+  type        = string
+  description = "If set, use a specific KMS key"
+  default     = null
+}
+
+variable "performance_mode" {
+  type        = string
+  description = "The file system performance mode. Can be either `generalPurpose` or `maxIO`"
+  default     = "generalPurpose"
+}
+
+variable "provisioned_throughput_in_mibps" {
+  type        = number
+  default     = 0
+  description = "The throughput, measured in MiB/s, that you want to provision for the file system. Only applicable with `throughput_mode` set to provisioned"
+}
+
+variable "throughput_mode" {
+  type        = string
+  description = "Throughput mode for the file system. Defaults to bursting. Valid values: `bursting`, `provisioned`. When using `provisioned`, also set `provisioned_throughput_in_mibps`"
+  default     = "bursting"
+}
+
+variable "mount_target_ip_address" {
+  type        = string
+  description = "The address (within the address range of the specified subnet) at which the file system may be mounted via the mount target"
+  default     = null
+}
+
+variable "dns_name" {
+  type        = string
+  description = "Name of the CNAME record to create"
+  default     = ""
+}
+
+variable "transition_to_ia" {
+  type        = list(string)
+  description = "Indicates how long it takes to transition files to the Infrequent Access (IA) storage class. Valid values: AFTER_7_DAYS, AFTER_14_DAYS, AFTER_30_DAYS, AFTER_60_DAYS and AFTER_90_DAYS. Default (no value) means \"never\"."
+  default     = []
   validation {
-    condition     = var.vpc_id == "" || can(regex("^vpc-", var.vpc_id))
-    error_message = "Wrong value for variable vpc_id."
+    condition = (
+      length(var.transition_to_ia) == 1 ? contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia[0]) : length(var.transition_to_ia) == 0
+    )
+    error_message = "Var `transition_to_ia` must either be empty list or one of \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\"."
   }
 }
 
-variable "aws_region" {
+variable "transition_to_primary_storage_class" {
+  type        = list(string)
+  description = "Describes the policy used to transition a file from Infrequent Access (IA) storage to primary storage. Valid values: AFTER_1_ACCESS."
+  default     = []
+  validation {
+    condition = (
+      length(var.transition_to_primary_storage_class) == 1 ? contains(["AFTER_1_ACCESS"], var.transition_to_primary_storage_class[0]) : length(var.transition_to_primary_storage_class) == 0
+    )
+    error_message = "Var `transition_to_primary_storage_class` must either be empty list or \"AFTER_1_ACCESS\"."
+  }
+}
+
+variable "efs_backup_policy_enabled" {
+  type        = bool
+  description = "If `true`, it will turn on automatic backups."
+  default     = false
+}
+
+variable "availability_zone_name" {
   type        = string
-  default     = ""
-  description = "The AWS region where the module is being applied. Required when `enable_vpc_endpoint == true`"
+  description = "AWS Availability Zone in which to create the file system. Used to create a file system that uses One Zone storage classes. If set, a single subnet in the same availability zone should be provided to `subnets`"
+  default     = null
 }
