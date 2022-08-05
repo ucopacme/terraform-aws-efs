@@ -1,53 +1,24 @@
-variable "name" {
-  description = "Solution name, e.g. `app`"
-}
-
-variable "repository" {
-  type        = string
-  default     = "https://github.com/clouddrove/terraform-aws-efs"
-  description = "Terraform current module repo"
-}
-
-variable "environment" {
-  type        = string
-  default     = "test"
-  description = "Environment (e.g. `prod`, `dev`, `staging`)."
-}
-
-variable "label_order" {
-  type        = list(any)
-  default     = ["name", "environment"]
-  description = "label order, e.g. `name`,`application`"
-}
-
-variable "managedby" {
-  type        = string
-  default     = "hello@clouddrove.com"
-  description = "ManagedBy, eg 'CloudDrove'."
-}
-
-# Module      : EFS
-# Description : Terraform EFS  module variables.
-variable "security_groups" {
+variable "allowed_cidr_blocks" {
   type        = list(string)
-  sensitive   = true
-  description = "Security group IDs to allow access to the EFS"
+  default     = []
+  description = "The CIDR blocks from which to allow `ingress` traffic to the EFS"
 }
 
-variable "efs_enabled" {
-  type        = bool
-  default     = true
-  description = "Set to false to prevent the module from creating any resources"
-}
-
-variable "creation_token" {
-  type        = string
-  description = "A unique name (a maximum of 64 characters are allowed) used as reference when creating the EFS"
+variable "access_points" {
+  type        = map(map(map(any)))
+  default     = {}
+  description = <<-EOT
+    A map of the access points you would like in your EFS volume
+    See [examples/complete] for an example on how to set this up.
+    All keys are strings. The primary keys are the names of access points.
+    The secondary keys are `posix_user` and `creation_info`.
+    The secondary_gids key should be a comma separated value.
+    More information can be found in the terraform resource [efs_access_point](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_access_point).
+    EOT
 }
 
 variable "vpc_id" {
   type        = string
-  sensitive   = true
   description = "VPC ID"
 }
 
@@ -58,90 +29,97 @@ variable "region" {
 
 variable "subnets" {
   type        = list(string)
-  sensitive   = true
   description = "Subnet IDs"
 }
 
-variable "availability_zones" {
-  type        = list(string)
-  sensitive   = true
-  description = "Availability Zone IDs"
-}
-
 variable "zone_id" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Route53 DNS zone ID"
-}
-
-variable "delimiter" {
-  type        = string
-  default     = "-"
-  description = "Delimiter to be used between `namespace`, `stage`, `name` and `attributes`"
-
-}
-
-variable "attributes" {
   type        = list(string)
   default     = []
-  description = "If true, the file system will be encrypted"
+  description = <<-EOT
+    Route53 DNS Zone ID as list of string (0 or 1 items). If empty, no custom DNS name will be published.
+    If the list contains a single Zone ID, a custom DNS name will be pulished in that zone.
+    Can also be a plain string, but that use is DEPRECATED because of Terraform issues.
+    EOT
 }
-
 variable "tags" {
-  type        = map(string)
   default     = {}
-  description = "Additional tags (e.g. `{ BusinessUnit = \"XYZ\" }`"
+  description = "A map of tags to add to all resources"
+  type        = map(string)
 }
-
 variable "encrypted" {
   type        = bool
-  default     = true
   description = "If true, the file system will be encrypted"
+  default     = true
+}
 
+variable "kms_key_id" {
+  type        = string
+  description = "If set, use a specific KMS key"
+  default     = null
 }
 
 variable "performance_mode" {
   type        = string
-  default     = "generalPurpose"
   description = "The file system performance mode. Can be either `generalPurpose` or `maxIO`"
-
+  default     = "generalPurpose"
 }
 
 variable "provisioned_throughput_in_mibps" {
+  type        = number
   default     = 0
   description = "The throughput, measured in MiB/s, that you want to provision for the file system. Only applicable with `throughput_mode` set to provisioned"
 }
 
 variable "throughput_mode" {
   type        = string
-  default     = "bursting"
   description = "Throughput mode for the file system. Defaults to bursting. Valid values: `bursting`, `provisioned`. When using `provisioned`, also set `provisioned_throughput_in_mibps`"
-
+  default     = "bursting"
 }
 
 variable "mount_target_ip_address" {
   type        = string
-  default     = null
-  sensitive   = true
   description = "The address (within the address range of the specified subnet) at which the file system may be mounted via the mount target"
+  default     = null
 }
 
-variable "kms_key_id" {
+variable "dns_name" {
   type        = string
+  description = "Name of the CNAME record to create"
   default     = ""
-  sensitive   = true
-  description = "The ARN for the KMS encryption key. When specifying kms_key_id, encrypted needs to be set to true."
+}
+
+variable "transition_to_ia" {
+  type        = list(string)
+  description = "Indicates how long it takes to transition files to the Infrequent Access (IA) storage class. Valid values: AFTER_7_DAYS, AFTER_14_DAYS, AFTER_30_DAYS, AFTER_60_DAYS and AFTER_90_DAYS. Default (no value) means \"never\"."
+  default     = []
+  validation {
+    condition = (
+      length(var.transition_to_ia) == 1 ? contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia[0]) : length(var.transition_to_ia) == 0
+    )
+    error_message = "Var `transition_to_ia` must either be empty list or one of \"AFTER_7_DAYS\", \"AFTER_14_DAYS\", \"AFTER_30_DAYS\", \"AFTER_60_DAYS\", \"AFTER_90_DAYS\"."
+  }
+}
+
+variable "transition_to_primary_storage_class" {
+  type        = list(string)
+  description = "Describes the policy used to transition a file from Infrequent Access (IA) storage to primary storage. Valid values: AFTER_1_ACCESS."
+  default     = []
+  validation {
+    condition = (
+      length(var.transition_to_primary_storage_class) == 1 ? contains(["AFTER_1_ACCESS"], var.transition_to_primary_storage_class[0]) : length(var.transition_to_primary_storage_class) == 0
+    )
+    error_message = "Var `transition_to_primary_storage_class` must either be empty list or \"AFTER_1_ACCESS\"."
+  }
 }
 
 variable "efs_backup_policy_enabled" {
   type        = bool
-  default     = true
   description = "If `true`, it will turn on automatic backups."
+  default     = false
 }
 
-variable "allow_cidr" {
-  type        = list(any)
-  default     = []
-  description = "Provide allowed cidr to efs"
+variable "availability_zone_name" {
+  type        = string
+  description = "AWS Availability Zone in which to create the file system. Used to create a file system that uses One Zone storage classes. If set, a single subnet in the same availability zone should be provided to `subnets`"
+  default     = null
 }
