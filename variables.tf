@@ -32,15 +32,15 @@ variable "subnets" {
   description = "Subnet IDs"
 }
 
-variable "zone_id" {
-  type        = list(string)
-  default     = []
-  description = <<-EOT
-    Route53 DNS Zone ID as list of string (0 or 1 items). If empty, no custom DNS name will be published.
-    If the list contains a single Zone ID, a custom DNS name will be pulished in that zone.
-    Can also be a plain string, but that use is DEPRECATED because of Terraform issues.
-    EOT
-}
+# variable "zone_id" {
+#   type        = list(string)
+#   default     = []
+#   description = <<-EOT
+#     Route53 DNS Zone ID as list of string (0 or 1 items). If empty, no custom DNS name will be published.
+#     If the list contains a single Zone ID, a custom DNS name will be pulished in that zone.
+#     Can also be a plain string, but that use is DEPRECATED because of Terraform issues.
+#     EOT
+# }
 variable "tags" {
   default     = {}
   description = "A map of tags to add to all resources"
@@ -82,11 +82,11 @@ variable "mount_target_ip_address" {
   default     = null
 }
 
-variable "dns_name" {
-  type        = string
-  description = "Name of the CNAME record to create"
-  default     = ""
-}
+# variable "dns_name" {
+#   type        = string
+#   description = "Name of the CNAME record to create"
+#   default     = ""
+# }
 
 variable "transition_to_ia" {
   type        = list(string)
