@@ -88,16 +88,16 @@ variable "mount_target_ip_address" {
 #   default     = ""
 # }
 
-variable "transition_to_ia" {
-  type        = string
-  description = "The period of time that a file is not accessed, after which it transitions to the IA storage class"
-  default     = ""
+# variable "transition_to_ia" {
+#   type        = string
+#   description = "The period of time that a file is not accessed, after which it transitions to the IA storage class"
+#   default     = ""
 
-  validation {
-    condition     = var.transition_to_ia == "" || contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia)
-    error_message = "Invalid value for transition_to_ia."
-  }
-}
+#   validation {
+#     condition     = var.transition_to_ia == "" || contains(["AFTER_7_DAYS", "AFTER_14_DAYS", "AFTER_30_DAYS", "AFTER_60_DAYS", "AFTER_90_DAYS"], var.transition_to_ia)
+#     error_message = "Invalid value for transition_to_ia."
+#   }
+# }
 
 # variable "transition_to_primary_storage_class" {
 #   type        = list(string)
