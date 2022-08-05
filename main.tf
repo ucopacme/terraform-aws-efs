@@ -47,7 +47,7 @@ resource "aws_efs_access_point" "default" {
   dynamic "posix_user" {
     for_each = null != lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)) ? [1] : []
     content {
-      gid            = lookup(lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)), "gid"
+      gid            = lookup(lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)), "gid")
       uid            = lookup(lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)), "uid")
       # secondary_gids = local.secondary_gids[each.key] != null ? split(",", local.secondary_gids[each.key]) : null
     }
