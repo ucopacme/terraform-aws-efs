@@ -1,6 +1,6 @@
 locals {
   # enabled                = module.this.enabled
-  security_group_enabled =  var.create_security_group
+  # security_group_enabled =  var.create_security_group
 
   # dns_name = format("%s.efs.%s.amazonaws.com", join("", aws_efs_file_system.default.*.id), var.region)
   # Returning null in the lookup function gives type errors and is not omitting the parameter.
