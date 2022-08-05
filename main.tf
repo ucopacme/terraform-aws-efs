@@ -1,19 +1,3 @@
-locals {
-  enabled                = module.this.enabled
-  # security_group_enabled = local.enabled && var.create_security_group
-
-  # dns_name = format("%s.efs.%s.amazonaws.com", join("", aws_efs_file_system.default.*.id), var.region)
-  # Returning null in the lookup function gives type errors and is not omitting the parameter.
-  # This work around ensures null is returned.
-  posix_users = {
-    for k, v in var.access_points :
-    k => lookup(var.access_points[k], "posix_user", {})
-  }
-  secondary_gids = {
-    for k, v in var.access_points :
-    k => lookup(local.posix_users[k], "secondary_gids", null)
-  }
-}
 
 resource "aws_efs_file_system" "default" {
   #bridgecrew:skip=BC_AWS_GENERAL_48: BC complains about not having an AWS Backup plan. We ignore this because this can be done outside of this module.
@@ -27,25 +11,26 @@ resource "aws_efs_file_system" "default" {
   throughput_mode                 = var.throughput_mode
 
   dynamic "lifecycle_policy" {
-    for_each = length(var.transition_to_ia) > 0 ? [1] : []
+    for_each = var.transition_to_ia == "" ? [] : [1]
     content {
-      transition_to_ia = try(var.transition_to_ia[0], null)
+      transition_to_ia = var.transition_to_ia
     }
   }
 
   dynamic "lifecycle_policy" {
-    for_each = length(var.transition_to_primary_storage_class) > 0 ? [1] : []
+    for_each = var.transition_to_primary_storage_class == "" ? [] : [1]
     content {
-      transition_to_primary_storage_class = try(var.transition_to_primary_storage_class[0], null)
+      transition_to_primary_storage_class = var.transition_to_primary_storage_class
     }
   }
 }
 
 resource "aws_efs_mount_target" "default" {
-  count          = local.enabled && length(var.subnets) > 0 ? length(var.subnets) : 0
-  file_system_id = join("", aws_efs_file_system.default.*.id)
-  ip_address     = var.mount_target_ip_address
+  count          = length(var.subnets)
+  file_system_id = aws_efs_file_system.default.id
+  # ip_address     = var.mount_target_ip_address
   subnet_id      = var.subnets[count.index]
+  security_groups = var.security_groups
   # security_groups = compact(
   #   (concat(
   #     [module.security_group.id],
@@ -55,17 +40,16 @@ resource "aws_efs_mount_target" "default" {
 }
 
 resource "aws_efs_access_point" "default" {
-  for_each = local.enabled ? var.access_points : {}
+  for_each = var.access_points
 
-  file_system_id = join("", aws_efs_file_system.default.*.id)
+  file_system_id = aws_efs_file_system.default.id
 
   dynamic "posix_user" {
-    for_each = local.posix_users[each.key] != null ? ["true"] : []
-
+    for_each = null != lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)) ? [1] : []
     content {
-      gid            = local.posix_users[each.key]["gid"]
-      uid            = local.posix_users[each.key]["uid"]
-      secondary_gids = local.secondary_gids[each.key] != null ? split(",", local.secondary_gids[each.key]) : null
+      gid            = lookup(lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)), "gid"
+      uid            = uid = lookup(lookup(each.value, "posix_user", lookup(var.access_points_defaults, "posix_user", null)), "uid")
+      # secondary_gids = local.secondary_gids[each.key] != null ? split(",", local.secondary_gids[each.key]) : null
     }
   }
 
@@ -73,12 +57,12 @@ resource "aws_efs_access_point" "default" {
     path = "/${each.key}"
 
     dynamic "creation_info" {
-      for_each = try(var.access_points[each.key]["creation_info"]["gid"], "") != "" ? ["true"] : []
+      for_each = null != lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)) ? [1] : []
 
       content {
-        owner_gid   = var.access_points[each.key]["creation_info"]["gid"]
-        owner_uid   = var.access_points[each.key]["creation_info"]["uid"]
-        permissions = var.access_points[each.key]["creation_info"]["permissions"]
+        owner_gid   = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "owner_gid")
+        owner_uid   = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "owner_uid")
+        permissions = lookup(lookup(each.value, "creation_info", lookup(var.access_points_defaults, "creation_info", null)), "permissions"
       }
     }
   }
