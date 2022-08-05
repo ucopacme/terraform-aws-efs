@@ -3,7 +3,10 @@ variable "allowed_cidr_blocks" {
   default     = []
   description = "The CIDR blocks from which to allow `ingress` traffic to the EFS"
 }
-
+variable "name" {
+  description = "name, to be used as prefix for all resource names"
+  type        = string
+}
 variable "access_points" {
   type        = map(map(map(any)))
   default     = {}
