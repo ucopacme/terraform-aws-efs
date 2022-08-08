@@ -82,6 +82,36 @@ resource "aws_efs_access_point" "default" {
 
   tags = var.tags
 }
+    
+resource "aws_efs_file_system_policy" "policy" {
+  file_system_id = aws_efs_file_system.default.id
+
+  policy = <<POLICY
+{
+    "Version": "2012-10-17",
+    "Id": "ExamplePolicy01",
+    "Statement": [
+        {
+            "Sid": "ExampleSatement01",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"
+            },
+            "Resource": "${aws_efs_file_system.default.arn}",
+            "Action": [
+                "elasticfilesystem:ClientMount",
+                "elasticfilesystem:ClientWrite"
+            ],
+            "Condition": {
+                "Bool": {
+                    "aws:SecureTransport": "true"
+                }
+            }
+        }
+    ]
+}
+POLICY
+}
 
 # module "security_group" {
 #   source  = "cloudposse/security-group/aws"
