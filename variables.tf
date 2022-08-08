@@ -4,9 +4,9 @@ variable "allowed_cidr_blocks" {
   description = "The CIDR blocks from which to allow `ingress` traffic to the EFS"
 }
 variable "policy" {
-  type        = string
-  default     = ""
-  description = "A valid  policy JSON document. Note that if the policy document is not specific enough (but still valid), Terraform may view the policy as constantly changing in a terraform plan. In this case, please make sure you use the verbose/specific version of the policy"
+  description = "Valid JSON policies for the role"
+  type        = "list"
+  default     = []
 }
 variable "access_points" {
   type        = map(map(map(any)))
