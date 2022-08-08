@@ -5,8 +5,7 @@ variable "allowed_cidr_blocks" {
 }
 variable "policy" {
   description = "Valid JSON policies for the role"
-  type        = "list"
-  default     = []
+  type        = string
 }
 variable "access_points" {
   type        = map(map(map(any)))
