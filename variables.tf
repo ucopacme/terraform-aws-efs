@@ -19,7 +19,11 @@ variable "access_points" {
     More information can be found in the terraform resource [efs_access_point](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_access_point).
     EOT
 }
-
+variable "security_groups" {
+  description = "The security groups to attach to the load balancer. e.g. [\"sg-edcd9784\",\"sg-edcd9785\"]"
+  type        = list(string)
+  default     = []
+}
 variable "vpc_id" {
   type        = string
   description = "VPC ID"
