@@ -8,6 +8,6 @@ output "file_system_arn" {
   description = "EFS ARN"
 }
 output "access_points_arn" {
-value       = aws_efs_access_point.default.*.arn
+value       = var.enabled ? { for arn in sort(keys(var.access_points)) : arn => aws_efs_access_point.default[arn].arn } : null
 description = "The access point list"
 }
