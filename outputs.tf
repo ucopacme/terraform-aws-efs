@@ -14,5 +14,5 @@ description = "The access point list"
  
 output "access_point_ids" {
 value       = local.enabled ? { for id in sort(keys(var.access_points)) : id => aws_efs_access_point.default[id].id } : null
-description = "EFS AP ids"
+description = "The access point id"
 }
